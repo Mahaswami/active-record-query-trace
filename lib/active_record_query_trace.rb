@@ -53,6 +53,10 @@ module ActiveRecordQueryTrace
           Rails.backtrace_cleaner.instance_variable_set :@root, Rails.root.to_s
         end
 
+        # Scholar friendly silencer fixes
+
+        app_root_path = File.expand_path(Rails.root.to_s + "/..")
+
         case ActiveRecordQueryTrace.level
         when :full
           trace
@@ -60,7 +64,14 @@ module ActiveRecordQueryTrace
           Rails.respond_to?(:backtrace_cleaner) ? Rails.backtrace_cleaner.clean(trace) : trace
         when :app
           Rails.backtrace_cleaner.remove_silencers!
-          Rails.backtrace_cleaner.add_silencer { |line| not line =~ /^(app|lib|engines)\// }
+          Rails.backtrace_cleaner.add_silencer { |line|
+            # Scholar friendly silencer fixes
+            if line =~ /^#{app_root_path}/
+              false
+            else
+              not line =~ /^(app|lib|engines)\//
+            end
+          }
           Rails.backtrace_cleaner.clean(trace)
         else
           raise "Invalid ActiveRecordQueryTrace.level value '#{ActiveRecordQueryTrace.level}' - should be :full, :rails, or :app"
